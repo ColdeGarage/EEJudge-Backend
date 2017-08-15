@@ -6,6 +6,7 @@ user = Blueprint('user', __name__)
 
 prefix = config.host_prefix + '/user'
 
+
 @user.route('/api/user/create')
 def create():
-	return 'this is user create'
+    return 'this is user create'
