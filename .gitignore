@@ -1,2 +1,2 @@
-/src/db_pw.py
-/src/__pycache__/*.pyc
+src/db_pw.py
+src/__pycache__/*
