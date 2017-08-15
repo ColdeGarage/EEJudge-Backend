@@ -18,6 +18,14 @@ qs_key = qs_required + qs_optional
 qs = Blueprint('question', __name__)
 
 
+<<<<<<< HEAD
+question_key = ['title', 'content', 'content_input', 'content_output',
+                'example_input', 'example_output', 'judge_input',
+                'limit_time', 'limit_item', 'hint', 'tag', 'source']
+
+
+=======
+>>>>>>> master
 @qs.before_request
 def db_connect():
     g.conn = MySQLdb.connect(host=config.DB['host'],
@@ -28,6 +36,20 @@ def db_connect():
 
 
 @qs.after_request
+<<<<<<< HEAD
+def db_disconnect():
+    g.cursor.close()
+    g.conn.close()
+
+
+def db_query(query, args=(), one=False):
+    g.cursor.execute(query, args)
+    data_rows = g.fetchall()
+    rv = [dict((g.cursor.description[index][0], value)
+          for index, value in enumerate(row))
+          for row in data_rows]
+    return (rv[0] if rv else None) if one else rv
+=======
 def db_disconnect(response):
     g.cursor.close()
     g.conn.close()
@@ -42,6 +64,7 @@ def db_query(query, args=()):
           for index, value in enumerate(row))
           for row in data_rows]
     return rv if rv else None
+>>>>>>> master
 
 
 @qs.route(prefix + '/create', methods=['POST'])
@@ -52,6 +75,18 @@ def create():
         'server_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'payload': []
     }
+<<<<<<< HEAD
+    # check for all
+    if not request.json:
+        ret['status_code'] = 400
+        return jsonify(ret)
+    for i in range(len(question_key)):
+        if not request.json[question_key[i]]:
+            ret['status_code'] = 400
+            return jsonify(ret)
+    ret['status_code'] = 201
+    return jsonify(ret)
+=======
     data = request.get_json()
     # check for all
     if data is None:
@@ -81,6 +116,7 @@ def create():
     except MySQLdb.Error as err:
         print('MySQL Error:', err)
         return jsonify(ret), 500
+>>>>>>> master
 
 
 @qs.route(prefix + '/read', methods=['GET'])
