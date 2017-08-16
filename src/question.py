@@ -34,8 +34,8 @@ def db_disconnect(response):
     return response
 
 
-def db_query(query, args=()):
-    g.cursor.execute(query, args)
+def db_query(sql, args=()):
+    g.cursor.execute(sql, args)
     g.conn.commit()
     data_rows = g.cursor.fetchall()
     rv = [dict((g.cursor.description[index][0], value)
@@ -71,11 +71,11 @@ def create():
         except KeyError:
             value.append(None)
 
-    query = 'INSERT INTO question (' + ','.join(qs_key) + ')'
-    query += 'VALUES (' + ', '.join(['%s'] * len(qs_key)) + ')'
+    sql = 'INSERT INTO question (' + ', '.join(qs_key) + ')'
+    sql += 'VALUES (' + ', '.join(['%s'] * len(qs_key)) + ')'
 
     try:
-        db_query(query, tuple(value))
+        db_query(sql, tuple(value))
         ret['payload'] = [{'sid': g.cursor.lastrowid}]
         return jsonify(ret), 201
     except MySQLdb.Error as err:
@@ -95,8 +95,8 @@ def read():
     print(data)
     if data is None:
         try:
-            query = 'SELECT * FROM question'
-            payload = db_query(query)
+            sql = 'SELECT * FROM question'
+            payload = db_query(sql)
             ret['payload'] = payload
             return jsonify(ret), 200
         except MySQLdb.Error as err:
@@ -104,8 +104,8 @@ def read():
             return jsonify(ret), 500
 
     try:
-        query = 'SELECT * FROM question WHERE qid = ' + str(data['qid'])
-        payload = db_query(query)
+        sql = 'SELECT * FROM question WHERE qid = ' + str(data['qid'])
+        payload = db_query(sql)
         ret['payload'] = payload
         return jsonify(ret), 200
     except KeyError:
@@ -126,28 +126,28 @@ def update():
     data = request.get_json()
     if data is None:
         return jsonify(ret), 400
+    try:
+        qid = data['qid']
+    except KeyError as err:
+        print(err)
+        return jsonify(ret), 400
 
+    key = []
     value = []
-    for i in range(len(qs_required)):
+    for i in range(len(qs_key)):
         try:
-            value.append(data[qs_required[i]])
+            value.append(data[qs_key[i]])
+            key.append(qs_key[i])
         except KeyError as err:
-            print(err)
-            return jsonify(ret), 400
+            pass
 
-    for i in range(len(qs_optional)):
-        try:
-            value.append(data[qs_optional[i]])
-        except KeyError:
-            value.append(None)
-
-    query = 'UPDATE question SET '
-    query += '=%s, '.join(qs_key) + '=%s '
-    query += 'WHERE qid = ' + str(data['qid'])
+    sql = 'UPDATE question SET '
+    sql += '=%s, '.join(key) + '=%s '
+    sql += 'WHERE qid = ' + qid
 
     try:
-        db_query(query, tuple(value))
-        return jsonify(ret), 201
+        db_query(sql, tuple(value))
+        return jsonify(ret), 200
     except MySQLdb.Error as err:
         print('MySQL Error:', err)
         return jsonify(ret), 500
@@ -165,8 +165,8 @@ def delete():
     if data is None:
         return jsonify(ret), 400
     try:
-        query = 'DELETE FROM question WHERE qid = ' + str(data['qid'])
-        payload = db_query(query)
+        sql = 'DELETE FROM question WHERE qid = ' + str(data['qid'])
+        payload = db_query(sql)
         sub_query = 'DELETE FROM submission WHERE qid = ' + str(data['qid'])
         payload = db_query(sub_query)
         ret['payload'] = payload
