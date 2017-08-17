@@ -119,12 +119,18 @@ def readUnjudge():
         'payload': []
     }
 
-    query = 'SELECT * FROM `submission` WHERE `judge_status` = "JP"'
+    query_sel = 'SELECT * FROM `submission` WHERE `judge_status` = "JP"'
+    query_udt = 'UPDATE `submission` ' + \
+                "SET `judge_status`='JI' " + \
+                'WHERE `submission`.`sid` = '
 
     try:
-        db_ret = db_query(query)
+        db_ret = db_query(query_sel, one=True)
         print(db_ret)
-        ret['payload'] = db_ret
+        ret['payload'] = [db_ret]
+        query_udt += db_ret['sid']
+        db_ret = db_query(query_udt)
+        print(db_ret)
         return jsonify(ret), 200
     except MySQLdb.Error as err:
         print("MySQLdb Error:")
