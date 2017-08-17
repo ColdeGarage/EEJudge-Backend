@@ -209,28 +209,29 @@ def update():
     if data is None:
         return jsonify(ret), 400
 
+    try:
+        sid = data['sid']
+    except KeyError as err:
+        print(err)
+        return jsonify(ret), 400
+
+    keys = []
     values = []
-    for i in range(len(sub_required)):
+    for i in range(len(sub_keys)):
         try:
+            keys.append(sub_keys[i])
             values.append(data[sub_required[i]])
         except KeyError as err:
-            print(err)
-            return jsonify(ret), 400
-
-    for i in range(len(sub_optional)):
-        try:
-            values.append(data[sub_optional[i]])
-        except KeyError as err:
-            values.append(None)
+            pass
 
     query = 'UPDATE `submission` SET '
-    query += '=%s, '.join(sub_keys) + '=%s '
-    query += 'WHERE `submission`.`sid` = ' + str(data['sid'])
+    query += '=%s, '.join(keys) + '=%s '
+    query += 'WHERE `submission`.`sid` = ' + sid
 
     try:
         db_ret = db_query(query, tuple(values))
         print(db_ret)
-        return jsonify(ret), 201
+        return jsonify(ret), 200
     except MySQLdb.Error as err:
         print('MySQLdb error:')
         print(err)
