@@ -123,31 +123,35 @@ def update():
         'server_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'payload': []
     }
-    data = request.get_json()
+
+    data = request.get_json(force=False)
+    print("Received data:")
+    print(data)
     if data is None:
         return jsonify(ret), 400
 
-    value = []
-    for i in range(len(qs_required)):
-        try:
-            value.append(data[qs_required[i]])
-        except KeyError as err:
-            print(err)
-            return jsonify(ret), 400
+    try:
+        qid = data['qid']
+    except KeyError as err:
+        print(err)
+        return jsonify(ret), 400
 
-    for i in range(len(qs_optional)):
+    keys = []
+    values = []
+    for i in range(len(qs_key)):
         try:
-            value.append(data[qs_optional[i]])
-        except KeyError:
-            value.append(None)
+            values.append(data[qs_key[i]])
+            keys.append(qs_key[i])
+        except KeyError as err:
+            pass
 
     query = 'UPDATE question SET '
-    query += '=%s, '.join(qs_key) + '=%s '
-    query += 'WHERE qid = ' + str(data['qid'])
+    query += '=%s, '.join(keys) + '=%s '
+    query += 'WHERE qid = ' + str(qid)
 
     try:
-        db_query(query, tuple(value))
-        return jsonify(ret), 201
+        db_query(query, tuple(values))
+        return jsonify(ret), 200
     except MySQLdb.Error as err:
         print('MySQL Error:', err)
         return jsonify(ret), 500

@@ -13,8 +13,8 @@ sub = Blueprint('submission', __name__)
 prefix = config.host_prefix + '/submission'
 
 
-sub_required = ['uid', 'qid', 'code', 'judge_status']
-sub_optional = ['judge_exetime', 'judge_exemem']
+sub_required = ['uid', 'qid', 'code']
+sub_optional = ['judge_status', 'judge_exetime', 'judge_exemem']
 
 sub_keys = sub_required + sub_optional
 
@@ -97,12 +97,20 @@ def readUncompiled():
         'payload': []
     }
 
-    query = 'SELECT * FROM `submission` WHERE `judge_status` = "CP"'
+    query_sel = 'SELECT * FROM `submission` WHERE `judge_status` = "CP"'
+    query_udt = 'UPDATE `submission` ' + \
+                "SET `judge_status`='CI' " + \
+                'WHERE `submission`.`sid`='
 
     try:
-        db_ret = db_query(query)
+        db_ret = db_query(query_sel, one=True)
+        print("DataBase SELECT return :")
         print(db_ret)
-        ret['payload'] = db_ret
+        if db_ret is not None:
+            ret['payload'] = [db_ret]
+            query_udt += str(db_ret['sid'])
+            db_ret = db_query(query_udt)
+            print(db_ret)
         return jsonify(ret), 200
     except MySQLdb.Error as err:
         print("MySQLdb Error:")
@@ -122,15 +130,17 @@ def readUnjudge():
     query_sel = 'SELECT * FROM `submission` WHERE `judge_status` = "JP"'
     query_udt = 'UPDATE `submission` ' + \
                 "SET `judge_status`='JI' " + \
-                'WHERE `submission`.`sid` = '
+                'WHERE `submission`.`sid`='
 
     try:
         db_ret = db_query(query_sel, one=True)
+        print("DataBase SELECT return :")
         print(db_ret)
-        ret['payload'] = [db_ret]
-        query_udt += db_ret['sid']
-        db_ret = db_query(query_udt)
-        print(db_ret)
+        if db_ret is not None:
+            ret['payload'] = [db_ret]
+            query_udt += str(db_ret['sid'])
+            db_ret = db_query(query_udt)
+            print(db_ret)
         return jsonify(ret), 200
     except MySQLdb.Error as err:
         print("MySQLdb Error:")
@@ -212,6 +222,8 @@ def update():
     }
 
     data = request.get_json(force=False)
+    print("Received data:")
+    print(data)
     if data is None:
         return jsonify(ret), 400
 
@@ -225,15 +237,15 @@ def update():
     values = []
     for i in range(len(sub_keys)):
         try:
+            values.append(data[sub_keys[i]])
             keys.append(sub_keys[i])
-            values.append(data[sub_required[i]])
         except KeyError as err:
             pass
 
     query = 'UPDATE `submission` SET '
     query += '=%s, '.join(keys) + '=%s '
-    query += 'WHERE `submission`.`sid` = ' + sid
-
+    query += 'WHERE `submission`.`sid`=' + str(sid)
+    print(query)
     try:
         db_ret = db_query(query, tuple(values))
         print(db_ret)
